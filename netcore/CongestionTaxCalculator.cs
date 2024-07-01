@@ -1,7 +1,19 @@
 using System;
-using congestion.calculator;
+using System.Collections.Generic;
+using System.Linq;
+using congestion.calculator.TaxRules;
+using congestion.calculator.Vehicle;
+
 public class CongestionTaxCalculator
 {
+
+    private readonly ICongestionTaxRules _rule;
+    public CongestionTaxCalculator(ICongestionTaxRules rule)
+    {
+        this._rule = rule;
+    }
+
+
     /**
          * Calculate the total toll fee for one day
          *
@@ -10,96 +22,100 @@ public class CongestionTaxCalculator
          * @return - the total congestion tax for that day
          */
 
-    public int GetTax(Vehicle vehicle, DateTime[] dates)
+    public int GetTax(IVehicle vehicle, DateTime[] dates)
     {
-        DateTime intervalStart = dates[0];
-        int totalFee = 0;
-        foreach (DateTime date in dates)
+        if (_rule.IsTollFreeVehicle(vehicle)) return 0;
+
+        if (vehicle == null || dates == null || dates.Length == 0)
+            return 0;
+
+        if (dates.Length == 1)
+            return _rule.GetTollFee(dates[0]); ;
+
+        var timesDictionary = FillTimesTaxFee(vehicle, dates);
+
+        var totalFee = 0;
+
+        foreach (var month in GroupedByMonth(dates))
         {
-            int nextFee = GetTollFee(date, vehicle);
-            int tempFee = GetTollFee(intervalStart, vehicle);
-
-            long diffInMillies = date.Millisecond - intervalStart.Millisecond;
-            long minutes = diffInMillies / 1000 / 60;
-
-            if (minutes <= 60)
+            foreach (var day in GroupedByDay(month))
             {
-                if (totalFee > 0) totalFee -= tempFee;
-                if (nextFee >= tempFee) tempFee = nextFee;
-                totalFee += tempFee;
-            }
-            else
-            {
-                totalFee += nextFee;
+                var dayFee = day.Value.Sum(current => timesDictionary[current]);
+
+                dayFee = ApplyMaximumDayTaxFeeRule(dayFee);
+
+                totalFee += dayFee;
             }
         }
-        if (totalFee > 60) totalFee = 60;
+
         return totalFee;
     }
 
-    private bool IsTollFreeVehicle(Vehicle vehicle)
+    private int ApplyMaximumDayTaxFeeRule(int dayFee)
     {
-        if (vehicle == null) return false;
-        String vehicleType = vehicle.GetVehicleType();
-        return vehicleType.Equals(TollFreeVehicles.Motorcycle.ToString()) ||
-               vehicleType.Equals(TollFreeVehicles.Tractor.ToString()) ||
-               vehicleType.Equals(TollFreeVehicles.Emergency.ToString()) ||
-               vehicleType.Equals(TollFreeVehicles.Diplomat.ToString()) ||
-               vehicleType.Equals(TollFreeVehicles.Foreign.ToString()) ||
-               vehicleType.Equals(TollFreeVehicles.Military.ToString());
+        if (dayFee > _rule.GetMaxFee())
+            dayFee = _rule.GetMaxFee();
+        return dayFee;
     }
 
-    public int GetTollFee(DateTime date, Vehicle vehicle)
+    private static Dictionary<int, DateTime[]> GroupedByDay(KeyValuePair<int, DateTime[]> month)
     {
-        if (IsTollFreeDate(date) || IsTollFreeVehicle(vehicle)) return 0;
-
-        int hour = date.Hour;
-        int minute = date.Minute;
-
-        if (hour == 6 && minute >= 0 && minute <= 29) return 8;
-        else if (hour == 6 && minute >= 30 && minute <= 59) return 13;
-        else if (hour == 7 && minute >= 0 && minute <= 59) return 18;
-        else if (hour == 8 && minute >= 0 && minute <= 29) return 13;
-        else if (hour >= 8 && hour <= 14 && minute >= 30 && minute <= 59) return 8;
-        else if (hour == 15 && minute >= 0 && minute <= 29) return 13;
-        else if (hour == 15 && minute >= 0 || hour == 16 && minute <= 59) return 18;
-        else if (hour == 17 && minute >= 0 && minute <= 59) return 13;
-        else if (hour == 18 && minute >= 0 && minute <= 29) return 8;
-        else return 0;
+        var groupedByDay =
+            month.Value
+                .GroupBy(c => c.Day)
+                .ToDictionary(group => group.Key, group => group
+                    .OrderBy(c => c.Hour).ThenBy(c => c.Minute)
+                    .ToArray());
+        return groupedByDay;
     }
 
-    private Boolean IsTollFreeDate(DateTime date)
+    private static Dictionary<int, DateTime[]> GroupedByMonth(DateTime[] dates)
     {
-        int year = date.Year;
-        int month = date.Month;
-        int day = date.Day;
+        var groupedByMonth =
+            dates
+                .GroupBy(c => c.Month)
+                .ToDictionary(group => group.Key, group => group
+                    .OrderBy(c => c.Day).ThenBy(c => c.Hour).ThenBy(c => c.Minute)
+                    .ToArray());
+        return groupedByMonth;
+    }
 
-        if (date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday) return true;
+    private Dictionary<DateTime, int> FillTimesTaxFee(IVehicle vehicle, DateTime[] dates)
+    {
+        Array.Sort(dates);
 
-        if (year == 2013)
+        var timesDictionary = dates.ToDictionary(group => group, group => 0);
+
+        var earlier = dates[0];
+
+        foreach (var current in dates)
         {
-            if (month == 1 && day == 1 ||
-                month == 3 && (day == 28 || day == 29) ||
-                month == 4 && (day == 1 || day == 30) ||
-                month == 5 && (day == 1 || day == 8 || day == 9) ||
-                month == 6 && (day == 5 || day == 6 || day == 21) ||
-                month == 7 ||
-                month == 11 && day == 1 ||
-                month == 12 && (day == 24 || day == 25 || day == 26 || day == 31))
+            var earlierFee = _rule.GetTollFee(earlier);
+            var currentFee = _rule.GetTollFee(current);
+
+            var minutes = (long)current.Subtract(earlier).TotalMinutes;
+            if (minutes <= 60)
             {
-                return true;
+                if (earlierFee <= currentFee)
+                    currentFee -= earlierFee;
+
+                SetTimeTaxFee(timesDictionary, earlier, earlierFee, current, currentFee);
+            }
+            else
+            {
+                SetTimeTaxFee(timesDictionary, earlier, earlierFee, current, currentFee);
+
+                earlier = current;
             }
         }
-        return false;
+
+        return timesDictionary;
     }
 
-    private enum TollFreeVehicles
+    private static void SetTimeTaxFee(Dictionary<DateTime, int> timesDictionary, DateTime earlier, int earlierFee, DateTime current,
+        int currentFee)
     {
-        Motorcycle = 0,
-        Tractor = 1,
-        Emergency = 2,
-        Diplomat = 3,
-        Foreign = 4,
-        Military = 5
+        timesDictionary[earlier] = earlierFee;
+        timesDictionary[current] = currentFee;
     }
 }
