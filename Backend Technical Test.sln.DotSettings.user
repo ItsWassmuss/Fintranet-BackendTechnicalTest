@@ -1,9 +1,20 @@
 ﻿<wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=507dd90f_002D491a_002D4873_002Db1c1_002D97df4cf7037f/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="CongestionTaxCalculatorTests" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
+	<s:String x:Key="/Default/Environment/Highlighting/HighlightingSourceSnapshotLocation/@EntryValue">C:\Users\HP EliteBook\AppData\Local\Temp\JetBrains\ReSharperPlatformVs17\vAny_35a3be17\CoverageData\_Backend Technical Test.1229824786\Snapshot\snapshot.utdcvr</s:String>
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=507dd90f_002D491a_002D4873_002Db1c1_002D97df4cf7037f/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="CongestionTaxCalculatorTests" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
   &lt;TestAncestor&gt;&#xD;
     &lt;TestId&gt;xUnit::1B4619D6-74F8-41F5-A3EA-EA56F5B55B45::.NETCoreApp,Version=v3.1::TestProject.CongestionTaxCalculatorTests&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;xUnit::1B4619D6-74F8-41F5-A3EA-EA56F5B55B45::.NETCoreApp,Version=v3.1::TestProject.CongestionTaxCalculatorTests2&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;xUnit::B1164401-7190-49E4-9148-ABD136B6E9BA::.NETCoreApp,Version=v3.1::TestProject.CongestionTaxCalculatorTests&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;xUnit::B1164401-7190-49E4-9148-ABD136B6E9BA::.NETCoreApp,Version=v3.1::TestProject.CongestionTaxCalculatorTests2&lt;/TestId&gt;&#xD;
+  &lt;/TestAncestor&gt;&#xD;
+&lt;/SessionState&gt;</s:String>
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=c6a440c2_002D62c8_002D4cfe_002D9336_002D91a345421a32/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="CongestionTaxCalculatorTests #2" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
+  &lt;TestAncestor&gt;&#xD;
+    &lt;TestId&gt;xUnit::B1164401-7190-49E4-9148-ABD136B6E9BA::.NETCoreApp,Version=v3.1::TestProject.CongestionTaxCalculatorTests&lt;/TestId&gt;&#xD;
+  &lt;/TestAncestor&gt;&#xD;
+&lt;/SessionState&gt;</s:String>
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=d519421e_002D6d2e_002D4023_002Da714_002Ddcb8c7409dc1/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="GetTax_ShouldReturnZero_ForTollFreeVehicle" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
+  &lt;TestAncestor&gt;&#xD;
+    &lt;TestId&gt;xUnit::B1164401-7190-49E4-9148-ABD136B6E9BA::.NETCoreApp,Version=v3.1::TestProject.CongestionTaxCalculatorTests&lt;/TestId&gt;&#xD;
   &lt;/TestAncestor&gt;&#xD;
 &lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>

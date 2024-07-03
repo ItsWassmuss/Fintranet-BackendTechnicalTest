@@ -7,10 +7,11 @@ using congestion.calculator.Vehicle;
 public class CongestionTaxCalculator
 {
 
-    private readonly ICongestionTaxRules _rule;
-    public CongestionTaxCalculator(ICongestionTaxRules rule)
+    private readonly ITaxRulesFactory _rulesFactory;
+    private ICongestionTaxRules _rule;
+    public CongestionTaxCalculator(ITaxRulesFactory rulesFactory)
     {
-        this._rule = rule;
+        this._rulesFactory = rulesFactory;
     }
 
 
@@ -22,8 +23,11 @@ public class CongestionTaxCalculator
          * @return - the total congestion tax for that day
          */
 
-    public int GetTax(IVehicle vehicle, DateTime[] dates)
+    public int GetTax(IVehicle vehicle, DateTime[] dates, string city, int year)
     {
+        // Create an instance of TaxRules using the factory
+        _rule = _rulesFactory.Create(city, year);
+
         if (_rule.IsTollFreeVehicle(vehicle)) return 0;
 
         if (vehicle == null || dates == null || dates.Length == 0)

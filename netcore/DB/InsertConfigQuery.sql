@@ -1,4 +1,8 @@
-{
+INSERT INTO public.cityconfigs(
+	city, year, config)
+	VALUES ('gothenburg', 2013, 
+	'
+	{
     "MaxDayFee": 60,
     "TollFreeMonths": [ 7 ],
     "TollFreeDates": [
@@ -67,3 +71,5 @@
         }
     ]
 }
+	'
+	);

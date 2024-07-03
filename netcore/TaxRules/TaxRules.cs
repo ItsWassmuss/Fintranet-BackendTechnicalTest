@@ -1,22 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
+using congestion.calculator.Repository;
 using congestion.calculator.Vehicle;
-using Newtonsoft.Json;
 
 namespace congestion.calculator.TaxRules
 {
     public class TaxRules : ICongestionTaxRules
     {
+        private readonly ITaxConfigRepository _configRepository;
+
         private readonly int _maxDailyFee;
         private readonly int[] _tollFreeMonth;
         private readonly HashSet<DateTime> _tollFreeDates;
         private readonly List<TimeRange> _timeRanges;
 
-        public TaxRules(string city)
+        public TaxRules(string city, int year, ITaxConfigRepository configRepository)
         {
-            var config = LoadConfig(city);
+            _configRepository = configRepository;
+
+            var config = LoadConfig(city, year);
             _maxDailyFee = config.MaxDayFee;
             _tollFreeMonth = config.TollFreeMonths;
             _tollFreeDates = new HashSet<DateTime>(config.TollFreeDates.Select(DateTime.Parse));
@@ -64,6 +67,11 @@ namespace congestion.calculator.TaxRules
             return _tollFreeDates.Contains(date.Date);
         }
 
+        private Config LoadConfig(string city, int year)
+        {
+            return _configRepository.LoadConfig(city, year);
+        }
+
         private class TimeRange
         {
             public TimeSpan Start { get; }
@@ -82,32 +90,6 @@ namespace congestion.calculator.TaxRules
                 var timeOfDay = dateTime.TimeOfDay;
                 return timeOfDay >= Start && timeOfDay <= End;
             }
-        }
-
-        private static Config LoadConfig(string city)
-        {
-            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "tax_rules.json");
-            var configContent = File.ReadAllText(path);
-            var allConfigs = JsonConvert.DeserializeObject<Dictionary<string, Config>>(configContent);
-            if (allConfigs != null && allConfigs.TryGetValue(city.ToLower(), out var config))
-            {
-                return config;
-            }
-            throw new Exception($"Configuration for city '{city}' not found.");
-        }
-        private class Config
-        {
-            public int MaxDayFee { get; set; }
-            public int[] TollFreeMonths { get; set; }
-            public List<string> TollFreeDates { get; set; }
-            public List<TimeRangeConfig> TimeSegments { get; set; }
-        }
-
-        private class TimeRangeConfig
-        {
-            public string Start { get; set; }
-            public string End { get; set; }
-            public int Fee { get; set; }
         }
 
         private enum TollFreeVehicles

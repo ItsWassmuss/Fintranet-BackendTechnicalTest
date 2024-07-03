@@ -1,18 +1,53 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using congestion.calculator.Repository;
 using congestion.calculator.TaxRules;
 using Xunit;
 using congestion.calculator.Vehicle;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace TestProject
 {
     public class CongestionTaxCalculatorTests
     {
         private readonly CongestionTaxCalculator _calculator;
+        private readonly string city = "gothenburg";
+        private readonly int year = 2013;
+        private readonly string connectionString = "Server=localhost; port=5432; user id = postgres; password = 123; database=CongestionTaxDB; pooling = true";
+
+        private readonly IConfiguration _configuration;
 
         public CongestionTaxCalculatorTests()
         {
-            _calculator = new CongestionTaxCalculator(new GothenburgTaxRules2013());
+            var inMemorySettings = new Dictionary<string, string> {
+                {"ConnectionStrings:DefaultConnection", connectionString},
+            };
+
+            _configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(inMemorySettings)
+                .Build();
+
+
+            // Arrange
+            var services = new ServiceCollection();
+
+            services.AddSingleton<IConfiguration>(_configuration);
+
+            // Register services
+
+            services.AddTransient<ITaxRulesFactory, TaxRulesFactory>();
+            services.AddTransient<ITaxConfigRepository, TaxConfigRepository>();
+            services.AddTransient<ICongestionTaxRules, TaxRules>();
+
+
+            var serviceProvider = services.BuildServiceProvider();
+
+            // Resolve the factory from the service provider
+            var taxRulesFactory = serviceProvider.GetRequiredService<ITaxRulesFactory>();
+            _calculator = new CongestionTaxCalculator(taxRulesFactory);
+
         }
 
         [Fact]
@@ -23,7 +58,7 @@ namespace TestProject
             DateTime[] dates = { new DateTime(2013, 7, 1, 8, 0, 0) };
 
             // Act
-            int tax = _calculator.GetTax(vehicle, dates);
+            int tax = _calculator.GetTax(vehicle, dates, city, year);
 
             // Assert
             Assert.Equal(0, tax);
@@ -37,7 +72,7 @@ namespace TestProject
             DateTime[] dates = { new DateTime(2013, 7, 1, 8, 0, 0) }; // July is toll-free
 
             // Act
-            int tax = _calculator.GetTax(vehicle, dates);
+            int tax = _calculator.GetTax(vehicle, dates, city, year);
 
             // Assert
             Assert.Equal(0, tax);
@@ -51,7 +86,7 @@ namespace TestProject
             DateTime[] dates = { new DateTime(2013, 3, 1, 6, 15, 0) }; // Should be 8
 
             // Act
-            int tax = _calculator.GetTax(vehicle, dates);
+            int tax = _calculator.GetTax(vehicle, dates, city, year);
 
             // Assert
             Assert.Equal(8, tax);
@@ -68,7 +103,7 @@ namespace TestProject
             };
 
             // Act
-            int tax = _calculator.GetTax(vehicle, dates);
+            int tax = _calculator.GetTax(vehicle, dates, city, year);
 
             // Assert
             Assert.Equal(13, tax); // Only the highest fee within the hour should apply
@@ -85,7 +120,7 @@ namespace TestProject
             };
 
             // Act
-            int tax = _calculator.GetTax(vehicle, dates);
+            int tax = _calculator.GetTax(vehicle, dates, city, year);
 
             // Assert
             Assert.Equal(26, tax); // 8 + 18
@@ -105,7 +140,7 @@ namespace TestProject
             };
 
             // Act
-            int tax = _calculator.GetTax(vehicle, dates);
+            int tax = _calculator.GetTax(vehicle, dates, city, year);
 
             // Assert
             Assert.Equal(57, tax); // Maximum cap
@@ -145,12 +180,11 @@ namespace TestProject
                 .ToArray();
 
             // Act
-            int tax = _calculator.GetTax(vehicle, dates);
+            int tax = _calculator.GetTax(vehicle, dates, city, year);
 
             // Assert
             Assert.Equal(89, tax); // Maximum cap
         }
-
         // Mock classes to simulate IVehicle behavior
         private class MockVehicle : IVehicle
         {
